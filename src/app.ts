@@ -1,6 +1,7 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import path from "path";
 
 import config from "./config/config";
 import connectToDB from "./config/connectToDb";
@@ -26,6 +27,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(express.static("dist"));
+// app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/adminuser_api", upload.array("image"), AdminUserRouter);
 
