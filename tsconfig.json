@@ -117,7 +117,7 @@
 {
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist",
+    "outDir": "./dist",
     "target": "ES2020",
     "module": "CommonJS",
     "esModuleInterop": true,

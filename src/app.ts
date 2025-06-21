@@ -1,7 +1,6 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
-import path from "path";
 
 import config from "./config/config";
 import connectToDB from "./config/connectToDb";
@@ -12,6 +11,8 @@ import unknownEndpoint from "./middlewares/unknownEndpoint";
 import { errorHandler } from "./middlewares/errorHandler";
 
 import AdminUserRouter from "./modules/adminUsers/routes";
+
+import { join, resolve } from "path";
 
 const MONGO_URI = config.MONGO_URI;
 const app = express();
@@ -26,12 +27,19 @@ app.use(morgan(":method :url :status :body"));
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(express.static("dist"));
-// app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(join(__dirname, "dist")));
 
 app.use("/adminuser_api", upload.array("image"), AdminUserRouter);
 
-app.use(errorHandler);
+try {
+  app.get(/.*/, (req, res) => {
+    res.sendFile(resolve("dist/public/index.html"));
+  });
+} catch (err) {
+  console.error("app.get('*') route failed to register:", err);
+}
+
 app.use(unknownEndpoint);
+app.use(errorHandler);
 
 export default app;

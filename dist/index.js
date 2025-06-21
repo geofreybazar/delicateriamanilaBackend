@@ -6,9 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = __importDefault(require("./app"));
 const config_1 = __importDefault(require("./config/config"));
 const PORT = config_1.default.PORT;
-app_1.default.get("/", (_req, res) => {
-    res.send("<h1>Hello JS</h1>");
-});
 app_1.default.listen(PORT, () => {
     console.log(`Server is Running on PORT ${PORT}`);
 });
