@@ -31,6 +31,10 @@ app.use((0, cookie_parser_1.default)());
 // app.use(express.static("dist"));
 app.use(express_1.default.static(path_1.default.join(__dirname, "public")));
 app.use("/adminuser_api", multer_1.default.array("image"), routes_1.default);
+
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve("dist", "index.html")); // Serve index.html for all other routes
+});
 app.use(errorHandler_1.errorHandler);
 app.use(unknownEndpoint_1.default);
 exports.default = app;
