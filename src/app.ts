@@ -12,7 +12,7 @@ import { errorHandler } from "./middlewares/errorHandler";
 
 import AdminUserRouter from "./modules/adminUsers/routes";
 
-import { join, resolve } from "path";
+import { resolve } from "path";
 
 const MONGO_URI = config.MONGO_URI;
 const app = express();
@@ -27,13 +27,13 @@ app.use(morgan(":method :url :status :body"));
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(express.static(join(__dirname, "dist")));
+app.use(express.static(resolve("dist/public")));
 
 app.use("/adminuser_api", upload.array("image"), AdminUserRouter);
 
 try {
   app.get(/.*/, (req, res) => {
-    res.sendFile(resolve("dist/public/index.html"));
+    res.sendFile(resolve("dist/public/index.html")); // Serves SPA fallback
   });
 } catch (err) {
   console.error("app.get('*') route failed to register:", err);

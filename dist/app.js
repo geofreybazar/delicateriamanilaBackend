@@ -24,11 +24,11 @@ app.use((0, cors_1.default)());
 app.use((0, morgan_1.default)(":method :url :status :body"));
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
-app.use(express_1.default.static((0, path_1.join)(__dirname, "dist")));
+app.use(express_1.default.static((0, path_1.resolve)("dist/public")));
 app.use("/adminuser_api", multer_1.default.array("image"), routes_1.default);
 try {
     app.get(/.*/, (req, res) => {
-        res.sendFile((0, path_1.resolve)("dist/public/index.html"));
+        res.sendFile((0, path_1.resolve)("dist/public/index.html")); // Serves SPA fallback
     });
 }
 catch (err) {
