@@ -33,6 +33,8 @@ const AdminUserSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
+}, {
+    timestamps: true,
 });
 AdminUserSchema.set("toJSON", {
     transform: (_document, returnedObject) => {

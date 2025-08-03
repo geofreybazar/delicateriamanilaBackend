@@ -13,6 +13,7 @@ function getEnvVar(name) {
 }
 const config = {
     PORT: Number(process.env.PORT) || 3005,
+    NODE_ENV: getEnvVar("NODE_ENV"),
     JWT_SECRET: getEnvVar("JWT_SECRET"),
     REFRESH_SECRET: getEnvVar("REFRESH_SECRET"),
     MONGO_URI: getEnvVar("MONGO_URI"),
@@ -20,5 +21,8 @@ const config = {
     CLOUDINARY_API_KEY: getEnvVar("CLOUDINARY_API_KEY"),
     CLOUDINARY_API_SECRET: getEnvVar("CLOUDINARY_API_SECRET"),
     CLOUDINARY_URL: getEnvVar("CLOUDINARY_URL"),
+    PAYMONGO_PUBLIC_KEY_TEST: getEnvVar("PAYMONGO_PUBLIC_KEY_TEST"),
+    PAYMONGO_SECRET_KEY_TEST: getEnvVar("PAYMONGO_SECRET_KEY_TEST"),
+    PAYMONGO_SECRET_KEY_TEST_BASE64: getEnvVar("PAYMONGO_SECRET_KEY_TEST_BASE64"),
 };
 exports.default = config;

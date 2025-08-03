@@ -27,6 +27,12 @@ const errorHandler = (error, req, res, next) => {
         res.status(400).json({ error: "Duplicate key error" });
     }
     else if (error.name === "AuthenticationError") {
+        res.status(error.status || 401).json({ error: error.message });
+    }
+    else if (error.name === "NotFoundError") {
+        res.status(error.status || 500).json({ error: error.message });
+    }
+    else if (error.name === "NoEnoughStockError") {
         res.status(error.status || 500).json({ error: error.message });
     }
     next(error);

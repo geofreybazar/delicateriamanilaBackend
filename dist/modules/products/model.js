@@ -7,6 +7,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const ProductSchema = new mongoose_1.default.Schema({
     name: {
         type: String,
+        unique: true,
         required: true,
     },
     description: {
@@ -23,17 +24,39 @@ const ProductSchema = new mongoose_1.default.Schema({
         required: true,
     },
     category: {
-        type: String,
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: "Collection",
         required: true,
     },
     stockQuantity: {
         type: Number,
         required: true,
     },
+    reservedStock: [
+        {
+            guestId: {
+                type: String,
+                required: true,
+            },
+            quantity: {
+                type: Number,
+                required: true,
+                min: 1,
+            },
+            expiresAt: {
+                type: Date,
+                required: true,
+            },
+        },
+    ],
+    featured: {
+        type: Boolean,
+        default: false,
+    },
     images: [
         {
-            url: String,
-            publicId: String,
+            url: { type: String, required: true },
+            publicId: { type: String, required: true },
         },
     ],
 }, { timestamps: true });

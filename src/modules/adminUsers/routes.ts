@@ -7,6 +7,7 @@ const AdminUserRouter = Router();
 AdminUserRouter.post("/", authenticateToken, controller.createAdminUser);
 AdminUserRouter.post("/login", controller.login);
 AdminUserRouter.post("/logout", authenticateToken, controller.logout);
+AdminUserRouter.post("/refreshtoken", controller.generateRefreshToken);
 AdminUserRouter.get("/", authenticateToken, controller.getLoggedInUser);
 AdminUserRouter.put(
   "/upadateuser",
@@ -18,5 +19,5 @@ AdminUserRouter.put(
   authenticateToken,
   controller.changePassword
 );
-AdminUserRouter.post("/refreshtoken", controller.generateRefreshToken);
+
 export default AdminUserRouter;

@@ -1,6 +1,8 @@
 import AdminUser from "./model";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import config from "../../config/config";
+import { AppError } from "../../middlewares/errorHandler";
 import {
   getUserSchema,
   updateUserSchema,
@@ -13,18 +15,15 @@ import {
   ChangePasswordType,
   changePasswordSchema,
 } from "./validation";
-import config from "../../config/config";
-import { AppError } from "../../middlewares/errorHandler";
+import { ValidationError } from "../../config/ValidationError";
+import { AuthenticationError } from "../../config/AuthenticationError";
 
 const createAdminUserService = async (
   body: UserType,
   defaultPassword: string
 ) => {
   if (!body || !userSchema.safeParse(body).success) {
-    const error: any = new Error("Invalid user data");
-    error.name = "ValidationError";
-    error.status = 500;
-    throw error;
+    throw new ValidationError("Invalid user data");
   }
   const saltRound = 10;
   const passwordhash = await bcrypt.hash(defaultPassword, saltRound);
@@ -43,10 +42,7 @@ const createAdminUserService = async (
 
 const loginService = async (body: LoginType) => {
   if (!body || !loginSchema.safeParse(body).success) {
-    const error: any = new Error("Invalid username or password");
-    error.name = "ValidationError";
-    error.status = 500;
-    throw error;
+    throw new ValidationError("Invalid username or password");
   }
 
   const { email, password } = body;
@@ -56,10 +52,7 @@ const loginService = async (body: LoginType) => {
     user === null ? false : await bcrypt.compare(password, user.passwordhash);
 
   if (!user || !passwordCorrect) {
-    const error: AppError = new Error("Invalid username or password");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
+    throw new AuthenticationError("Invalid username or password");
   }
 
   const userForToken = {
@@ -87,10 +80,7 @@ const loginService = async (body: LoginType) => {
 
 const getUserService = async (id: string) => {
   if (!id || !getUserSchema.safeParse({ id }).success) {
-    const error: any = new Error("Invalid user ID");
-    error.name = "ValidationError";
-    error.status = 500;
-    throw error;
+    throw new ValidationError("Invalid user ID");
   }
 
   const user = await AdminUser.findById(id).select(
@@ -101,19 +91,14 @@ const getUserService = async (id: string) => {
 
 const removeRefreshToken = async (body: LogoutType) => {
   if (!body || !logoutSchema.safeParse(body).success) {
-    const error: any = new Error("Invalid login data");
-    error.name = "ValidationError";
-    error.status = 500;
-    throw error;
+    throw new ValidationError("Invalid login data");
   }
+
   const { id, refreshToken } = body;
 
   const user = await AdminUser.findById(id);
   if (!user) {
-    const error: AppError = new Error("User not found!");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
+    throw new AuthenticationError("User not found!");
   }
   user.refreshtokens = user.refreshtokens.filter(
     (token) => token !== refreshToken
@@ -131,10 +116,7 @@ const updateUserInfoService = async (
     !id ||
     !getUserSchema.safeParse({ id }).success
   ) {
-    const error: any = new Error("Invalid user data");
-    error.name = "ValidationError";
-    error.status = 500;
-    throw error;
+    throw new ValidationError("Invalid user data");
   }
 
   const updatedUser = await AdminUser.findByIdAndUpdate(id, body);
@@ -143,28 +125,19 @@ const updateUserInfoService = async (
 
 const generateRefreshTokenService = async (refreshToken: string) => {
   if (!refreshToken) {
-    const error: AppError = new Error("Refresh token not found, Login again");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
+    throw new AuthenticationError("Refresh token not found, Login again");
   }
 
   const decodedToken = jwt.verify(refreshToken, config.REFRESH_SECRET);
 
   if (typeof decodedToken === "string") {
-    const error: AppError = new Error("Invalid token payload");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
+    throw new AuthenticationError("Invalid token payload");
   }
 
   const user = await AdminUser.findById(decodedToken.id);
 
   if (!user || !user.refreshtokens.includes(refreshToken)) {
-    const error: AppError = new Error("Refresh token is not valid");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
+    throw new AuthenticationError("Refresh token is not valid");
   }
 
   user.refreshtokens = user.refreshtokens.filter(
@@ -183,34 +156,30 @@ const generateRefreshTokenService = async (refreshToken: string) => {
     expiresIn: "7d",
   });
 
-  user.refreshtokens.push(newRefreshToken);
-  await user.save();
+  await AdminUser.findByIdAndUpdate(user._id, {
+    $pull: { refreshtokens: refreshToken },
+  });
+
+  await AdminUser.findByIdAndUpdate(user._id, {
+    $push: { refreshtokens: newRefreshToken },
+  });
 
   return { newAccessToken, newRefreshToken };
 };
 
 const changePasswordService = async (id: string, body: ChangePasswordType) => {
   if (!body || !changePasswordSchema.safeParse(body).success) {
-    const error: any = new Error("Invalid login data");
-    error.name = "ValidationError";
-    error.status = 500;
-    throw error;
+    throw new ValidationError("Invalid login data");
   }
   const { currentPassword, newPassword, confirmPassword } = body;
 
   if (confirmPassword !== newPassword) {
-    const error: any = new Error("Password not match!");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
+    throw new AuthenticationError("Password not match!");
   }
 
   const user = await AdminUser.findById(id);
   if (!user) {
-    const error: AppError = new Error("User not found!");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
+    throw new AuthenticationError("User not found!");
   }
 
   const passwordCorrect =
@@ -219,10 +188,7 @@ const changePasswordService = async (id: string, body: ChangePasswordType) => {
       : await bcrypt.compare(currentPassword, user.passwordhash);
 
   if (!passwordCorrect) {
-    const error: AppError = new Error("Wrong Current Password!");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
+    throw new AuthenticationError("Wrong Current Password!");
   }
 
   const saltRound = 10;

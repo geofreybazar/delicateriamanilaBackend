@@ -1,0 +1,1 @@
+import{w as n,a as u}from"./index-B_SK9RNk.js";const i=()=>{const{data:e,isLoading:r,isError:s,error:o,isSuccess:g}=n({queryKey:["LoggedInUser"],queryFn:()=>u.getLoggedInUser()});return{loggedInUser:e,isLoadingUser:r,isError:s,error:o,isSuccess:g}};export{i as u};
