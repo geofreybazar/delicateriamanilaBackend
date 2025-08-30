@@ -1,46 +1,43 @@
 import mongoose from "mongoose";
 
-const AdminUserSchema = new mongoose.Schema(
+const clientUserSchema = new mongoose.Schema(
   {
-    firstname: {
+    firstName: {
       type: String,
       required: true,
     },
-    lastname: {
+    lastName: {
       type: String,
       required: true,
-    },
-    middlename: {
-      type: String,
     },
     email: {
       type: String,
       required: true,
     },
-    passwordhash: {
+    provider: {
       type: String,
-      required: true,
     },
-    refreshtokens: [],
     phoneNumber: {
       type: String,
       required: true,
     },
-    role: {
+    address: {
       type: String,
-      required: true,
     },
-    status: {
+    city: {
       type: String,
-      required: true,
     },
+    orders: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Orders",
+      },
+    ],
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-AdminUserSchema.set("toJSON", {
+clientUserSchema.set("toJSON", {
   transform: (_document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString();
     delete returnedObject._id;
@@ -48,6 +45,6 @@ AdminUserSchema.set("toJSON", {
   },
 });
 
-const AdminUser = mongoose.model("AdminUser", AdminUserSchema);
+const ClientUser = mongoose.model("ClientUser", clientUserSchema);
 
-export default AdminUser;
+export default ClientUser;

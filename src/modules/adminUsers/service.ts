@@ -2,7 +2,6 @@ import AdminUser from "./model";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import config from "../../config/config";
-import { AppError } from "../../middlewares/errorHandler";
 import {
   getUserSchema,
   updateUserSchema,
@@ -17,14 +16,16 @@ import {
 } from "./validation";
 import { ValidationError } from "../../config/ValidationError";
 import { AuthenticationError } from "../../config/AuthenticationError";
+import Orders from "../orders/model";
+import Products from "../products/model";
+import ClientUser from "../clientUsers/model";
+import Webhook from "../webhook/model";
 
-const createAdminUserService = async (
-  body: UserType,
-  defaultPassword: string
-) => {
+const createAdminUserService = async (body: UserType) => {
   if (!body || !userSchema.safeParse(body).success) {
     throw new ValidationError("Invalid user data");
   }
+  const defaultPassword = config.DEFAULT_PASSWORD;
   const saltRound = 10;
   const passwordhash = await bcrypt.hash(defaultPassword, saltRound);
 
@@ -35,6 +36,8 @@ const createAdminUserService = async (
     email: body.email,
     passwordhash,
     phoneNumber: body.phoneNumber,
+    role: body.role,
+    status: "active",
   });
 
   return newAdminuser;
@@ -53,6 +56,12 @@ const loginService = async (body: LoginType) => {
 
   if (!user || !passwordCorrect) {
     throw new AuthenticationError("Invalid username or password");
+  }
+
+  if (user.status === "deactivated") {
+    throw new AuthenticationError(
+      "Your account is deactivated. Please contact the store owner or system administrator if you believe this is a mistake."
+    );
   }
 
   const userForToken = {
@@ -78,7 +87,7 @@ const loginService = async (body: LoginType) => {
   };
 };
 
-const getUserService = async (id: string) => {
+const getLoggedInUserService = async (id: string) => {
   if (!id || !getUserSchema.safeParse({ id }).success) {
     throw new ValidationError("Invalid user ID");
   }
@@ -135,7 +144,9 @@ const generateRefreshTokenService = async (refreshToken: string) => {
   }
 
   const user = await AdminUser.findById(decodedToken.id);
-
+  console.log(refreshToken);
+  console.log(!user);
+  console.log(!user?.refreshtokens.includes(refreshToken));
   if (!user || !user.refreshtokens.includes(refreshToken)) {
     throw new AuthenticationError("Refresh token is not valid");
   }
@@ -146,7 +157,7 @@ const generateRefreshTokenService = async (refreshToken: string) => {
 
   const userToken = {
     email: user.email,
-    id: user._id,
+    id: user.id,
   };
   const newAccessToken = jwt.sign(userToken, config.JWT_SECRET, {
     expiresIn: "15m",
@@ -156,11 +167,11 @@ const generateRefreshTokenService = async (refreshToken: string) => {
     expiresIn: "7d",
   });
 
-  await AdminUser.findByIdAndUpdate(user._id, {
+  await AdminUser.findByIdAndUpdate(user.id, {
     $pull: { refreshtokens: refreshToken },
   });
 
-  await AdminUser.findByIdAndUpdate(user._id, {
+  await AdminUser.findByIdAndUpdate(user.id, {
     $push: { refreshtokens: newRefreshToken },
   });
 
@@ -194,15 +205,154 @@ const changePasswordService = async (id: string, body: ChangePasswordType) => {
   const saltRound = 10;
   const newPasswordhash = await bcrypt.hash(newPassword, saltRound);
   user.passwordhash = newPasswordhash;
-  user.save();
+  await user.save();
+};
+
+const getAllAdminUsersService = async (page: number, limit: number) => {
+  const skip = (page - 1) * limit;
+
+  const [adminUsers, total] = await Promise.all([
+    AdminUser.find({}).skip(skip).limit(limit),
+    AdminUser.countDocuments(),
+  ]);
+
+  return {
+    adminUsers,
+    currentPage: page,
+    totalPages: Math.ceil(total / limit),
+    totalItems: total,
+  };
+};
+
+const getDeliveryRidersService = async () => {
+  const deliveryRiders = await AdminUser.find({ role: "rider" });
+
+  return deliveryRiders;
+};
+
+const getUserService = async (id: string) => {
+  if (!id || !getUserSchema.safeParse({ id }).success) {
+    throw new ValidationError("Invalid user ID");
+  }
+  const user = await AdminUser.findById(id).select(
+    "-passwordhash -__v -refreshtokens"
+  );
+  return user;
+};
+
+const resetAdminUserPasswordService = async (id: string) => {
+  const parsedData = getUserSchema.safeParse({ id });
+  if (!parsedData.success) {
+    throw new ValidationError("Invalid user ID");
+  }
+
+  const parsedId = parsedData.data.id;
+  const defaultPassword = config.DEFAULT_PASSWORD;
+
+  const user = await AdminUser.findById(parsedId);
+  if (!user) {
+    throw new AuthenticationError("User not found!");
+  }
+
+  const saltRound = 10;
+  const defaultPasswordHash = await bcrypt.hash(defaultPassword, saltRound);
+  user.passwordhash = defaultPasswordHash;
+  await user.save();
+
+  return { message: "Password reset successfully" };
+};
+
+const deactivateAdminUserService = async (id: string) => {
+  const parsedData = getUserSchema.safeParse({ id });
+  if (!parsedData.success) {
+    throw new ValidationError("Invalid user ID");
+  }
+
+  const parsedId = parsedData.data.id;
+  const user = await AdminUser.findByIdAndUpdate(parsedId, {
+    status: "deactivated",
+  });
+
+  if (!user) {
+    throw new AuthenticationError("User not found!");
+  }
+
+  return;
+};
+
+const updateAdminUserService = async (id: string, body: UserType) => {
+  if (
+    !body ||
+    !userSchema.safeParse(body).success ||
+    !id ||
+    !getUserSchema.safeParse({ id }).success
+  ) {
+    throw new ValidationError("Invalid user data");
+  }
+
+  const updatedUser = await AdminUser.findByIdAndUpdate(id, body);
+  return updatedUser;
+};
+
+const getDashboardSummaryService = async () => {
+  const totalOrders = await Orders.countDocuments();
+  const totalProducts = await Products.countDocuments();
+  const totalClientCustomers = await ClientUser.countDocuments();
+  const totalNet = await Webhook.aggregate([
+    { $match: { type: "checkout_session.payment.paid" } },
+    { $unwind: "$data.data.attributes.data.attributes.payments" },
+    {
+      $group: {
+        _id: null,
+        totalNetAmount: {
+          $sum: "$data.data.attributes.data.attributes.payments.attributes.net_amount",
+        },
+      },
+    },
+  ]);
+  console.log(totalNet);
+  const totalCounts = {
+    totalOrders,
+    totalProducts,
+    totalClientCustomers,
+    totalNet,
+  };
+
+  return totalCounts;
+};
+
+const activateAdminUserSerice = async (id: string) => {
+  const parsedData = getUserSchema.safeParse({ id });
+  if (!parsedData.success) {
+    throw new ValidationError("Invalid user ID");
+  }
+
+  const parsedId = parsedData.data.id;
+  const user = await AdminUser.findByIdAndUpdate(parsedId, {
+    status: "active",
+  });
+
+  if (!user) {
+    throw new AuthenticationError("User not found!");
+  }
+
+  return;
 };
 
 export default {
   createAdminUserService,
   loginService,
-  getUserService,
+  getLoggedInUserService,
   removeRefreshToken,
   updateUserInfoService,
   generateRefreshTokenService,
   changePasswordService,
+  getAllAdminUsersService,
+  getDeliveryRidersService,
+  getUserService,
+  resetAdminUserPasswordService,
+  deactivateAdminUserService,
+  updateAdminUserService,
+  getDashboardSummaryService,
+  activateAdminUserSerice,
 };

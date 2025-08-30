@@ -3,10 +3,26 @@ import service from "./service";
 
 const createCart = async (req: Request, res: Response, next: NextFunction) => {
   const id = req.params.id;
-  console.log(id);
+
   try {
     const newCart = await service.createCartService(id);
     res.status(201).json(newCart);
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createClientUserCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const body = req.body;
+
+  try {
+    const clientUserCart = await service.createClientUserCartService(body);
+    res.status(200).json(clientUserCart);
     return;
   } catch (error) {
     next(error);
@@ -79,4 +95,5 @@ export default {
   addQuantity,
   minusQuantity,
   removeItem,
+  createClientUserCart,
 };

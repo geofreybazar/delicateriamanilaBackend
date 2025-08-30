@@ -79,3 +79,9 @@ export const WebhookEventSchema = z.object({
 });
 
 export type WebhookEventType = z.infer<typeof WebhookEventSchema>;
+
+export const getPaymentServiceSchema = z
+  .string()
+  .regex(/^[a-f\d]{24}$/i, "Invalid product ID");
+
+export type GetPaymentServiceType = z.infer<typeof getPaymentServiceSchema>;

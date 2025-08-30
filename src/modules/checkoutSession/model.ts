@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const CheckoutSessionSchema = new mongoose.Schema({
-  guestId: String,
+  cartId: String,
   items: [
     {
       productId: {

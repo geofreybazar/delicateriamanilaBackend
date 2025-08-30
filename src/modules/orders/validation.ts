@@ -1,28 +1,38 @@
 import { z } from "zod";
 
-export const OrderItemSchema = z.object({
-  name: z.string(),
-  quantity: z.number().min(1),
-  price: z.number().min(0),
-  imgUrl: z.string().url(),
-  desciption: z.string().optional(),
+export const orderIdSchema = z
+  .string()
+  .regex(/^[a-f\d]{24}$/i, "Invalid product ID");
+
+export type OrderIdType = z.infer<typeof orderIdSchema>;
+
+export const AssignDeliveryServiceSchema = z.object({
+  orderId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid order ID"),
+  riderId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid rider ID"),
 });
 
-export const OrderSchemaZ = z.object({
-  webhookId: z.string(),
-  type: z.string(),
-  status: z.boolean(),
-  totalAmount: z.number().min(0),
-  customerDetails: z.object({
-    name: z.string(),
-    email: z.string().email(),
-    phoneNumber: z.string(),
+export type AssignDeliveryServiceType = z.infer<
+  typeof AssignDeliveryServiceSchema
+>;
+
+export const OrderPickedupServiceSchema = z.object({
+  orderId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid order ID"),
+  trackingNumber: z.string().min(1, "Reference number is required"),
+  modeOfPickup: z.string().min(1, "Mode of Pickup is required"),
+  pickupPersonName: z.string().min(1, "Pickup Person name is required"),
+  validId: z.string().min(1, "Valid id is required"),
+  idNumber: z.string().min(1, "Id number is required"),
+  contactNumber: z.string().regex(/^(09\d{9}|(\+639)\d{9})$/, {
+    message: "Invalid Philippine mobile number",
   }),
-  deliveryAddress: z.object({
-    line1: z.string().optional(),
-    city: z.string(),
-    postaCode: z.number(),
-    state: z.string(),
-  }),
-  itemsOrdered: z.array(OrderItemSchema),
+  pickupDateAndTime: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), {
+      message: "Invalid date string",
+    })
+    .transform((val) => new Date(val)),
 });
+
+export type OrderPickedupServiceType = z.infer<
+  typeof OrderPickedupServiceSchema
+>;

@@ -8,13 +8,9 @@ const createAdminUser = async (
   next: NextFunction
 ) => {
   const body = req.body;
-  const defaultPassword = "admin123";
 
   try {
-    const newAdminuser = await service.createAdminUserService(
-      body,
-      defaultPassword
-    );
+    const newAdminuser = await service.createAdminUserService(body);
     res.status(200).json(newAdminuser);
     return;
   } catch (error) {
@@ -159,7 +155,7 @@ const getLoggedInUser = async (
   const id = req.user.id;
 
   try {
-    const user = await service.getUserService(id);
+    const user = await service.getLoggedInUserService(id);
     res.status(200).json(user);
     return;
   } catch (error) {
@@ -190,6 +186,128 @@ const changePassword = async (
   }
 };
 
+const getAllAdminUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+
+  try {
+    const adminUsers = await service.getAllAdminUsersService(page, limit);
+    res.status(201).json(adminUsers);
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDeliveryRiders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const deliveryRiders = await service.getDeliveryRidersService();
+    res.status(201).json(deliveryRiders);
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUser = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = req.params.id;
+
+  try {
+    const user = await service.getUserService(id);
+    res.status(200).json(user);
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetAdminUserPassword = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = req.params.id;
+  try {
+    await service.resetAdminUserPasswordService(id);
+    res.status(200).json({ message: "Password reset successfully" });
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deactivateAdminUser = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = req.params.id;
+  try {
+    await service.deactivateAdminUserService(id);
+    res.status(200).json({ message: "User was deactivated" });
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const activateAdminUser = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = req.params.id;
+  try {
+    await service.activateAdminUserSerice(id);
+    res.status(200).json({ message: "User was activated" });
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateAdminUser = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = req.params.id;
+  const body = req.body;
+  try {
+    await service.updateAdminUserService(id, body);
+    res.status(200).json({ message: "User was updated" });
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDashboardSummary = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const totalCount = await service.getDashboardSummaryService();
+    res.status(200).json(totalCount);
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createAdminUser,
   login,
@@ -198,4 +316,12 @@ export default {
   updateUserInfo,
   changePassword,
   generateRefreshToken,
+  getAllAdminUsers,
+  getDeliveryRiders,
+  getUser,
+  resetAdminUserPassword,
+  deactivateAdminUser,
+  updateAdminUser,
+  getDashboardSummary,
+  activateAdminUser,
 };

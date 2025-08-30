@@ -15,6 +15,15 @@ const CartStorageSchema = new mongoose.Schema(
         },
       },
     ],
+    status: {
+      type: String,
+      default: "pending",
+    },
+    clientUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClientUser",
+      required: false,
+    },
     totalPrice: {
       type: Number,
       required: true,

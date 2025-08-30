@@ -14,6 +14,7 @@ interface Config {
   PAYMONGO_PUBLIC_KEY_TEST: string;
   PAYMONGO_SECRET_KEY_TEST: string;
   PAYMONGO_SECRET_KEY_TEST_BASE64: string;
+  DEFAULT_PASSWORD: string;
 }
 
 function getEnvVar(name: string): string {
@@ -35,6 +36,7 @@ const config: Config = {
   PAYMONGO_PUBLIC_KEY_TEST: getEnvVar("PAYMONGO_PUBLIC_KEY_TEST"),
   PAYMONGO_SECRET_KEY_TEST: getEnvVar("PAYMONGO_SECRET_KEY_TEST"),
   PAYMONGO_SECRET_KEY_TEST_BASE64: getEnvVar("PAYMONGO_SECRET_KEY_TEST_BASE64"),
+  DEFAULT_PASSWORD: getEnvVar("DEFAULT_PASSWORD"),
 };
 
 export default config;

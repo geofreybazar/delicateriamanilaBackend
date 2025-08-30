@@ -3,6 +3,10 @@ import controller from "./controller";
 
 const CartStorageRouter = express.Router();
 
+CartStorageRouter.post(
+  "/createclientusercart",
+  controller.createClientUserCart
+);
 CartStorageRouter.post("/:id", controller.createCart);
 CartStorageRouter.get("/:id", controller.getCart);
 CartStorageRouter.put("/additemtocart", controller.addItem);

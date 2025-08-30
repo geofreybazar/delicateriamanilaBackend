@@ -1,7 +1,7 @@
 import mongoose, { Types } from "mongoose";
 import CheckoutSession from "./model";
 import Products from "../products/model";
-
+import CartStorage from "../cartStorage/model";
 import {
   CheckoutSessionSchema,
   CheckoutSessionType,
@@ -27,10 +27,10 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
 
   const validatedBody = parsed.data;
 
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000);
 
   const existingSession = await CheckoutSession.findOne({
-    guestId: validatedBody.guestId,
+    cartId: validatedBody.cartId,
   }).session(session);
 
   const itemsToSave = validatedBody.items.map((item) => ({
@@ -41,9 +41,15 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
     imgUrl: item.imgUrl,
   }));
 
+  let checkoutSession;
+
   if (existingSession) {
-    const updatedCheckoutSession = await CheckoutSession.findOneAndUpdate(
-      { guestId: validatedBody.guestId },
+    if (existingSession.status === "expired") {
+      return { message: "Chekout Session expired!" };
+    }
+
+    checkoutSession = await CheckoutSession.findOneAndUpdate(
+      { cartId: validatedBody.cartId },
       {
         $set: {
           items: itemsToSave,
@@ -54,26 +60,23 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
       },
       { new: true }
     ).session(session);
-
-    await revalidateTag("checkoutSession");
-    return updatedCheckoutSession;
+  } else {
+    const created = await CheckoutSession.create(
+      [
+        {
+          cartId: validatedBody.cartId,
+          items: itemsToSave,
+          expiresAt,
+          totalPrice: validatedBody.totalPrice,
+          isFreeDelivery: validatedBody.isFreeDelivery,
+        },
+      ],
+      { session }
+    );
+    checkoutSession = created[0];
   }
 
-  const checkoutSession = await CheckoutSession.create(
-    [
-      {
-        guestId: validatedBody.guestId,
-        items: itemsToSave,
-        expiresAt,
-        totalPrice: validatedBody.totalPrice,
-        isFreeDelivery: validatedBody.isFreeDelivery,
-      },
-    ],
-    { session }
-  );
-
   const notEnoughStock = [];
-  const now = new Date();
   const productIds = body.items.map((item) => item.productid);
   const products = await Products.find({ _id: { $in: productIds } }).session(
     session
@@ -86,17 +89,14 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
 
   for (const item of validatedBody.items) {
     const product = productMap.get(item.productid);
+
     if (!product) {
       await session.abortTransaction();
       throw new NotFoundError("Product not Found");
     }
 
-    product.reservedStock = product.reservedStock.filter(
-      (r: { expiresAt: Date }) => new Date(r.expiresAt) > now
-    );
-
     const userReservation = product.reservedStock.find(
-      (r: { guestId: string }) => r.guestId === validatedBody.guestId
+      (r: { cartId: string }) => r.cartId === validatedBody.cartId
     );
 
     const userHasReserved = userReservation?.quantity || 0;
@@ -115,7 +115,31 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
   }
 
   if (notEnoughStock.length > 0) {
+    const cart = await CartStorage.findById(validatedBody.cartId);
+
+    if (cart) {
+      const outOfStockIds = notEnoughStock.map((item) => item.id.toString());
+
+      for (const id of outOfStockIds) {
+        cart.items.pull({ productid: id });
+      }
+
+      // Recalculate total price
+      let newTotal = 0;
+      for (const item of cart.items) {
+        const product = productMap.get(item.productid.toString());
+        if (product) {
+          newTotal += product.price * item.quantity;
+        }
+      }
+
+      cart.totalPrice = newTotal;
+
+      await cart.save();
+    }
+
     await session.abortTransaction();
+    session.endSession();
     return {
       message: "Some items are out of stock, refresh to update",
       itemsNoStock: notEnoughStock,
@@ -132,7 +156,7 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
 
     // Check if user already has a reservation
     const existingReservation = product.reservedStock.find(
-      (r: { guestId: string }) => r.guestId === validatedBody.guestId
+      (r: { cartId: string }) => r.cartId === validatedBody.cartId
     );
 
     const newQuantity = item.quantity;
@@ -163,9 +187,8 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
       }
       product.stockQuantity -= newQuantity;
       product.reservedStock.push({
-        guestId: body.guestId,
+        cartId: body.cartId,
         quantity: newQuantity,
-        expiresAt: expiresAt,
       });
     }
 
@@ -173,13 +196,13 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
   }
 
   await session.commitTransaction();
+  await revalidateTag("checkoutSession");
   session.endSession();
 
   await revalidateTag("products");
   await revalidateTag("checkoutSession");
 
-  console.log(checkoutSession);
-  return checkoutSession[0];
+  return checkoutSession;
 };
 
 const getCheckoutSessionService = async (id: string) => {

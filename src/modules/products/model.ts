@@ -31,17 +31,12 @@ const ProductSchema = new mongoose.Schema(
     },
     reservedStock: [
       {
-        guestId: {
+        cartId: {
           type: String,
           required: true,
         },
         quantity: {
           type: Number,
-          required: true,
-          min: 1,
-        },
-        expiresAt: {
-          type: Date,
           required: true,
         },
       },

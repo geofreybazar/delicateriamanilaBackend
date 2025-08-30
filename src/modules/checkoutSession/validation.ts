@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const CheckoutSessionSchema = z.object({
-  guestId: z.string().min(1, "Guess Id is required"),
+  cartId: z.string().min(1, "Cart Id is required"),
   totalPrice: z.number().min(1, "Total price is required"),
   isFreeDelivery: z.boolean(),
   items: z.array(
@@ -31,6 +31,7 @@ export const CreatePaymongoPaymentRequestSchema = z.object({
     .regex(/^[0-9]+$/, "Phone number must contain only numbers"),
   shippingFee: z.number(),
   sessionId: z.string().min(1, "Session ID is required"),
+  cartId: z.string().min(1, "Cart ID is required"),
   items: z
     .array(
       z.object({
