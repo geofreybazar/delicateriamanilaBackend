@@ -1,0 +1,1 @@
+import{H as a}from"./index-vQs_jjn0.js";const s=async(t,e)=>(await(await a("/webhook_api")).get(`/getpayments?page=${t+1}&limit=${e}`)).data,i=async t=>(await(await a("/webhook_api")).get(`/${t}`)).data,r={getPayments:s,getPayment:i};export{r as P};

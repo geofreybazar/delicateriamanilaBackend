@@ -33,6 +33,10 @@ const AdminUserSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
+    status: {
+        type: String,
+        required: true,
+    },
 }, {
     timestamps: true,
 });

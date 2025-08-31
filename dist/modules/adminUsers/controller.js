@@ -6,9 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const service_1 = __importDefault(require("./service"));
 const createAdminUser = async (req, res, next) => {
     const body = req.body;
-    const defaultPassword = "admin123";
     try {
-        const newAdminuser = await service_1.default.createAdminUserService(body, defaultPassword);
+        const newAdminuser = await service_1.default.createAdminUserService(body);
         res.status(200).json(newAdminuser);
         return;
     }
@@ -120,7 +119,7 @@ const getLoggedInUser = async (req, res, next) => {
     }
     const id = req.user.id;
     try {
-        const user = await service_1.default.getUserService(id);
+        const user = await service_1.default.getLoggedInUserService(id);
         res.status(200).json(user);
         return;
     }
@@ -145,6 +144,94 @@ const changePassword = async (req, res, next) => {
         next(error);
     }
 };
+const getAllAdminUsers = async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    try {
+        const adminUsers = await service_1.default.getAllAdminUsersService(page, limit);
+        res.status(201).json(adminUsers);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const getDeliveryRiders = async (req, res, next) => {
+    try {
+        const deliveryRiders = await service_1.default.getDeliveryRidersService();
+        res.status(201).json(deliveryRiders);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const getUser = async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        const user = await service_1.default.getUserService(id);
+        res.status(200).json(user);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const resetAdminUserPassword = async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        await service_1.default.resetAdminUserPasswordService(id);
+        res.status(200).json({ message: "Password reset successfully" });
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const deactivateAdminUser = async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        await service_1.default.deactivateAdminUserService(id);
+        res.status(200).json({ message: "User was deactivated" });
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const activateAdminUser = async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        await service_1.default.activateAdminUserSerice(id);
+        res.status(200).json({ message: "User was activated" });
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const updateAdminUser = async (req, res, next) => {
+    const id = req.params.id;
+    const body = req.body;
+    try {
+        await service_1.default.updateAdminUserService(id, body);
+        res.status(200).json({ message: "User was updated" });
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const getDashboardSummary = async (req, res, next) => {
+    try {
+        const totalCount = await service_1.default.getDashboardSummaryService();
+        res.status(200).json(totalCount);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
 exports.default = {
     createAdminUser,
     login,
@@ -153,4 +240,12 @@ exports.default = {
     updateUserInfo,
     changePassword,
     generateRefreshToken,
+    getAllAdminUsers,
+    getDeliveryRiders,
+    getUser,
+    resetAdminUserPassword,
+    deactivateAdminUser,
+    updateAdminUser,
+    getDashboardSummary,
+    activateAdminUser,
 };

@@ -6,10 +6,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const service_1 = __importDefault(require("./service"));
 const createCart = async (req, res, next) => {
     const id = req.params.id;
-    console.log(id);
     try {
         const newCart = await service_1.default.createCartService(id);
         res.status(201).json(newCart);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const createClientUserCart = async (req, res, next) => {
+    const body = req.body;
+    try {
+        const clientUserCart = await service_1.default.createClientUserCartService(body);
+        res.status(200).json(clientUserCart);
         return;
     }
     catch (error) {
@@ -78,4 +88,5 @@ exports.default = {
     addQuantity,
     minusQuantity,
     removeItem,
+    createClientUserCart,
 };

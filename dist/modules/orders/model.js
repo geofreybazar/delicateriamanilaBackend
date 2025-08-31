@@ -10,6 +10,16 @@ const OrderSchema = new mongoose_1.default.Schema({
         required: true,
         unique: true,
     },
+    referenceNumber: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    clientUserId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: "ClientUser",
+        required: false,
+    },
     type: {
         type: String,
         required: true,
@@ -22,7 +32,28 @@ const OrderSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
-    totalAmount: {
+    deliveryRider: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: "AdminUser",
+    },
+    pickupDetails: {
+        trackingNumber: { type: String, unique: true, required: false },
+        modeOfPickup: { type: String, required: false },
+        pickupPersonName: { type: String, required: false },
+        validId: { type: String, required: false },
+        idNumber: { type: String, required: false },
+        contactNumber: { type: String, required: false },
+        pickupDateAndTime: { type: Date, required: false },
+    },
+    netAmount: {
+        type: Number,
+        required: true,
+    },
+    totalClientPaid: {
+        type: Number,
+        required: true,
+    },
+    paymongoFee: {
         type: Number,
         required: true,
     },

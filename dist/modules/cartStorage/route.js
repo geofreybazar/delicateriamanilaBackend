@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const controller_1 = __importDefault(require("./controller"));
 const CartStorageRouter = express_1.default.Router();
+CartStorageRouter.post("/createclientusercart", controller_1.default.createClientUserCart);
 CartStorageRouter.post("/:id", controller_1.default.createCart);
 CartStorageRouter.get("/:id", controller_1.default.getCart);
 CartStorageRouter.put("/additemtocart", controller_1.default.addItem);

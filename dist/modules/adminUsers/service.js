@@ -10,10 +10,15 @@ const config_1 = __importDefault(require("../../config/config"));
 const validation_1 = require("./validation");
 const ValidationError_1 = require("../../config/ValidationError");
 const AuthenticationError_1 = require("../../config/AuthenticationError");
-const createAdminUserService = async (body, defaultPassword) => {
+const model_2 = __importDefault(require("../orders/model"));
+const model_3 = __importDefault(require("../products/model"));
+const model_4 = __importDefault(require("../clientUsers/model"));
+const model_5 = __importDefault(require("../webhook/model"));
+const createAdminUserService = async (body) => {
     if (!body || !validation_1.userSchema.safeParse(body).success) {
         throw new ValidationError_1.ValidationError("Invalid user data");
     }
+    const defaultPassword = config_1.default.DEFAULT_PASSWORD;
     const saltRound = 10;
     const passwordhash = await bcrypt_1.default.hash(defaultPassword, saltRound);
     const newAdminuser = await model_1.default.create({
@@ -23,6 +28,8 @@ const createAdminUserService = async (body, defaultPassword) => {
         email: body.email,
         passwordhash,
         phoneNumber: body.phoneNumber,
+        role: body.role,
+        status: "active",
     });
     return newAdminuser;
 };
@@ -35,6 +42,9 @@ const loginService = async (body) => {
     const passwordCorrect = user === null ? false : await bcrypt_1.default.compare(password, user.passwordhash);
     if (!user || !passwordCorrect) {
         throw new AuthenticationError_1.AuthenticationError("Invalid username or password");
+    }
+    if (user.status === "deactivated") {
+        throw new AuthenticationError_1.AuthenticationError("Your account is deactivated. Please contact the store owner or system administrator if you believe this is a mistake.");
     }
     const userForToken = {
         email: user.email,
@@ -54,7 +64,7 @@ const loginService = async (body) => {
         refreshToken,
     };
 };
-const getUserService = async (id) => {
+const getLoggedInUserService = async (id) => {
     if (!id || !validation_1.getUserSchema.safeParse({ id }).success) {
         throw new ValidationError_1.ValidationError("Invalid user ID");
     }
@@ -92,13 +102,16 @@ const generateRefreshTokenService = async (refreshToken) => {
         throw new AuthenticationError_1.AuthenticationError("Invalid token payload");
     }
     const user = await model_1.default.findById(decodedToken.id);
+    console.log(refreshToken);
+    console.log(!user);
+    console.log(!user?.refreshtokens.includes(refreshToken));
     if (!user || !user.refreshtokens.includes(refreshToken)) {
         throw new AuthenticationError_1.AuthenticationError("Refresh token is not valid");
     }
     user.refreshtokens = user.refreshtokens.filter((token) => token !== refreshToken);
     const userToken = {
         email: user.email,
-        id: user._id,
+        id: user.id,
     };
     const newAccessToken = jsonwebtoken_1.default.sign(userToken, config_1.default.JWT_SECRET, {
         expiresIn: "15m",
@@ -106,10 +119,10 @@ const generateRefreshTokenService = async (refreshToken) => {
     const newRefreshToken = jsonwebtoken_1.default.sign(userToken, config_1.default.REFRESH_SECRET, {
         expiresIn: "7d",
     });
-    await model_1.default.findByIdAndUpdate(user._id, {
+    await model_1.default.findByIdAndUpdate(user.id, {
         $pull: { refreshtokens: refreshToken },
     });
-    await model_1.default.findByIdAndUpdate(user._id, {
+    await model_1.default.findByIdAndUpdate(user.id, {
         $push: { refreshtokens: newRefreshToken },
     });
     return { newAccessToken, newRefreshToken };
@@ -135,14 +148,126 @@ const changePasswordService = async (id, body) => {
     const saltRound = 10;
     const newPasswordhash = await bcrypt_1.default.hash(newPassword, saltRound);
     user.passwordhash = newPasswordhash;
-    user.save();
+    await user.save();
+};
+const getAllAdminUsersService = async (page, limit) => {
+    const skip = (page - 1) * limit;
+    const [adminUsers, total] = await Promise.all([
+        model_1.default.find({}).skip(skip).limit(limit),
+        model_1.default.countDocuments(),
+    ]);
+    return {
+        adminUsers,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+    };
+};
+const getDeliveryRidersService = async () => {
+    const deliveryRiders = await model_1.default.find({ role: "rider" });
+    return deliveryRiders;
+};
+const getUserService = async (id) => {
+    if (!id || !validation_1.getUserSchema.safeParse({ id }).success) {
+        throw new ValidationError_1.ValidationError("Invalid user ID");
+    }
+    const user = await model_1.default.findById(id).select("-passwordhash -__v -refreshtokens");
+    return user;
+};
+const resetAdminUserPasswordService = async (id) => {
+    const parsedData = validation_1.getUserSchema.safeParse({ id });
+    if (!parsedData.success) {
+        throw new ValidationError_1.ValidationError("Invalid user ID");
+    }
+    const parsedId = parsedData.data.id;
+    const defaultPassword = config_1.default.DEFAULT_PASSWORD;
+    const user = await model_1.default.findById(parsedId);
+    if (!user) {
+        throw new AuthenticationError_1.AuthenticationError("User not found!");
+    }
+    const saltRound = 10;
+    const defaultPasswordHash = await bcrypt_1.default.hash(defaultPassword, saltRound);
+    user.passwordhash = defaultPasswordHash;
+    await user.save();
+    return { message: "Password reset successfully" };
+};
+const deactivateAdminUserService = async (id) => {
+    const parsedData = validation_1.getUserSchema.safeParse({ id });
+    if (!parsedData.success) {
+        throw new ValidationError_1.ValidationError("Invalid user ID");
+    }
+    const parsedId = parsedData.data.id;
+    const user = await model_1.default.findByIdAndUpdate(parsedId, {
+        status: "deactivated",
+    });
+    if (!user) {
+        throw new AuthenticationError_1.AuthenticationError("User not found!");
+    }
+    return;
+};
+const updateAdminUserService = async (id, body) => {
+    if (!body ||
+        !validation_1.userSchema.safeParse(body).success ||
+        !id ||
+        !validation_1.getUserSchema.safeParse({ id }).success) {
+        throw new ValidationError_1.ValidationError("Invalid user data");
+    }
+    const updatedUser = await model_1.default.findByIdAndUpdate(id, body);
+    return updatedUser;
+};
+const getDashboardSummaryService = async () => {
+    const totalOrders = await model_2.default.countDocuments();
+    const totalProducts = await model_3.default.countDocuments();
+    const totalClientCustomers = await model_4.default.countDocuments();
+    const totalNet = await model_5.default.aggregate([
+        { $match: { type: "checkout_session.payment.paid" } },
+        { $unwind: "$data.data.attributes.data.attributes.payments" },
+        {
+            $group: {
+                _id: null,
+                totalNetAmount: {
+                    $sum: "$data.data.attributes.data.attributes.payments.attributes.net_amount",
+                },
+            },
+        },
+    ]);
+    console.log(totalNet);
+    const totalCounts = {
+        totalOrders,
+        totalProducts,
+        totalClientCustomers,
+        totalNet,
+    };
+    return totalCounts;
+};
+const activateAdminUserSerice = async (id) => {
+    const parsedData = validation_1.getUserSchema.safeParse({ id });
+    if (!parsedData.success) {
+        throw new ValidationError_1.ValidationError("Invalid user ID");
+    }
+    const parsedId = parsedData.data.id;
+    const user = await model_1.default.findByIdAndUpdate(parsedId, {
+        status: "active",
+    });
+    if (!user) {
+        throw new AuthenticationError_1.AuthenticationError("User not found!");
+    }
+    return;
 };
 exports.default = {
     createAdminUserService,
     loginService,
-    getUserService,
+    getLoggedInUserService,
     removeRefreshToken,
     updateUserInfoService,
     generateRefreshTokenService,
     changePasswordService,
+    getAllAdminUsersService,
+    getDeliveryRidersService,
+    getUserService,
+    resetAdminUserPasswordService,
+    deactivateAdminUserService,
+    updateAdminUserService,
+    getDashboardSummaryService,
+    activateAdminUserSerice,
 };

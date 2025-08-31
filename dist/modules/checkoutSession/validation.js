@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreatePaymongoPaymentRequestSchema = exports.CheckoutSessionSchema = void 0;
 const zod_1 = require("zod");
 exports.CheckoutSessionSchema = zod_1.z.object({
-    guestId: zod_1.z.string().min(1, "Guess Id is required"),
+    cartId: zod_1.z.string().min(1, "Cart Id is required"),
     totalPrice: zod_1.z.number().min(1, "Total price is required"),
     isFreeDelivery: zod_1.z.boolean(),
     items: zod_1.z.array(zod_1.z.object({
@@ -28,6 +28,7 @@ exports.CreatePaymongoPaymentRequestSchema = zod_1.z.object({
         .regex(/^[0-9]+$/, "Phone number must contain only numbers"),
     shippingFee: zod_1.z.number(),
     sessionId: zod_1.z.string().min(1, "Session ID is required"),
+    cartId: zod_1.z.string().min(1, "Cart ID is required"),
     items: zod_1.z
         .array(zod_1.z.object({
         productId: zod_1.z.string().min(1, "Product ID is required"),

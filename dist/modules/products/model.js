@@ -34,17 +34,12 @@ const ProductSchema = new mongoose_1.default.Schema({
     },
     reservedStock: [
         {
-            guestId: {
+            cartId: {
                 type: String,
                 required: true,
             },
             quantity: {
                 type: Number,
-                required: true,
-                min: 1,
-            },
-            expiresAt: {
-                type: Date,
                 required: true,
             },
         },

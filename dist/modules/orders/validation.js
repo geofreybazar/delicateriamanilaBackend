@@ -1,29 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OrderSchemaZ = exports.OrderItemSchema = void 0;
+exports.OrderPickedupServiceSchema = exports.AssignDeliveryServiceSchema = exports.orderIdSchema = void 0;
 const zod_1 = require("zod");
-exports.OrderItemSchema = zod_1.z.object({
-    name: zod_1.z.string(),
-    quantity: zod_1.z.number().min(1),
-    price: zod_1.z.number().min(0),
-    imgUrl: zod_1.z.string().url(),
-    desciption: zod_1.z.string().optional(),
+exports.orderIdSchema = zod_1.z
+    .string()
+    .regex(/^[a-f\d]{24}$/i, "Invalid product ID");
+exports.AssignDeliveryServiceSchema = zod_1.z.object({
+    orderId: zod_1.z.string().regex(/^[a-f\d]{24}$/i, "Invalid order ID"),
+    riderId: zod_1.z.string().regex(/^[a-f\d]{24}$/i, "Invalid rider ID"),
 });
-exports.OrderSchemaZ = zod_1.z.object({
-    webhookId: zod_1.z.string(),
-    type: zod_1.z.string(),
-    status: zod_1.z.boolean(),
-    totalAmount: zod_1.z.number().min(0),
-    customerDetails: zod_1.z.object({
-        name: zod_1.z.string(),
-        email: zod_1.z.string().email(),
-        phoneNumber: zod_1.z.string(),
+exports.OrderPickedupServiceSchema = zod_1.z.object({
+    orderId: zod_1.z.string().regex(/^[a-f\d]{24}$/i, "Invalid order ID"),
+    trackingNumber: zod_1.z.string().min(1, "Reference number is required"),
+    modeOfPickup: zod_1.z.string().min(1, "Mode of Pickup is required"),
+    pickupPersonName: zod_1.z.string().min(1, "Pickup Person name is required"),
+    validId: zod_1.z.string().min(1, "Valid id is required"),
+    idNumber: zod_1.z.string().min(1, "Id number is required"),
+    contactNumber: zod_1.z.string().regex(/^(09\d{9}|(\+639)\d{9})$/, {
+        message: "Invalid Philippine mobile number",
     }),
-    deliveryAddress: zod_1.z.object({
-        line1: zod_1.z.string().optional(),
-        city: zod_1.z.string(),
-        postaCode: zod_1.z.number(),
-        state: zod_1.z.string(),
-    }),
-    itemsOrdered: zod_1.z.array(exports.OrderItemSchema),
+    pickupDateAndTime: zod_1.z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), {
+        message: "Invalid date string",
+    })
+        .transform((val) => new Date(val)),
 });

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebhookEventSchema = void 0;
+exports.getPaymentServiceSchema = exports.WebhookEventSchema = void 0;
 const zod_1 = require("zod");
 // Address Schema
 const AddressSchema = zod_1.z.object({
@@ -74,3 +74,6 @@ exports.WebhookEventSchema = zod_1.z.object({
         }),
     }),
 });
+exports.getPaymentServiceSchema = zod_1.z
+    .string()
+    .regex(/^[a-f\d]{24}$/i, "Invalid product ID");

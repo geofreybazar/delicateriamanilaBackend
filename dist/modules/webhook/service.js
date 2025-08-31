@@ -3,57 +3,127 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const mongoose_1 = __importDefault(require("mongoose"));
 const model_1 = __importDefault(require("./model"));
 const model_2 = __importDefault(require("../orders/model"));
 const model_3 = __importDefault(require("../checkoutSession/model"));
+const model_4 = __importDefault(require("../products/model"));
 const validation_1 = require("./validation");
+const model_5 = __importDefault(require("../cartStorage/model"));
+const ValidationError_1 = require("../../config/ValidationError");
+const NotFoundError_1 = require("../../config/NotFoundError");
+const socket_1 = require("../../config/socket");
+const model_6 = __importDefault(require("../clientUsers/model"));
 const acceptWebhookEndpointService = async (webhookbody) => {
     const parsed = validation_1.WebhookEventSchema.safeParse(webhookbody);
     if (!parsed.success) {
         console.log("Invalid webhook payload", parsed.error);
         return;
     }
+    const event = parsed.data;
+    const existingWebhook = await model_1.default.findOne({ eventId: event.data.id });
+    if (existingWebhook) {
+        console.log("Duplicate webhook event");
+        return { success: false, message: "Duplicate event" };
+    }
     const newWebhook = await model_1.default.create({
-        eventId: webhookbody.data.id,
-        type: webhookbody.data.attributes.type,
-        livemode: webhookbody.data.attributes.livemode,
-        data: webhookbody,
+        eventId: event.data.id,
+        type: event.data.attributes.type,
+        livemode: event.data.attributes.livemode,
+        data: event,
     });
-    if (webhookbody.data.attributes.type === "checkout_session.payment.paid") {
-        await model_2.default.create({
-            webhookId: webhookbody.data.id,
-            type: webhookbody.data.attributes.type,
-            paymentStatus: "payment received",
-            orderStatus: "pending",
-            totalAmount: webhookbody.data.attributes.data.attributes.payments?.[0].attributes
-                .amount,
-            customerDetails: {
-                name: webhookbody?.data?.attributes?.data?.attributes?.payments?.[0]
-                    ?.attributes?.billing?.name,
-                email: webhookbody.data.attributes.data.attributes.payments?.[0].attributes
-                    .billing?.email,
-                phoneNumber: webhookbody.data.attributes.data.attributes.payments?.[0].attributes
-                    .billing?.phone,
-            },
-            deliveryAddress: {
-                line1: webhookbody.data.attributes.data.attributes.payments?.[0].attributes
-                    .billing?.address.line1,
-                city: webhookbody.data.attributes.data.attributes.payments?.[0]
-                    .attributes.billing?.address.city,
-                postalCode: webhookbody.data.attributes.data.attributes.payments?.[0].attributes
-                    .billing?.address.postal_code,
-                state: webhookbody.data.attributes.data.attributes.payments?.[0].attributes
-                    .billing?.address.state,
-            },
-            itemsOrdered: webhookbody.data.attributes.data.attributes.line_items,
-        });
-        const reference_number = webhookbody.data.attributes.data.attributes.reference_number;
-        await model_3.default.findByIdAndUpdate(reference_number, {
-            status: "paid",
-        });
+    const reference_number = event.data.attributes.data.attributes.reference_number;
+    if (!reference_number?.includes("_")) {
+        console.error("Invalid reference number format");
+        return { success: false, message: "Invalid reference format" };
+    }
+    const [sessionId, cartId] = reference_number.split("_");
+    const cartStorage = await model_5.default.findById(cartId);
+    const clientUserId = cartStorage?.clientUserId;
+    if (event.data.attributes.type === "checkout_session.payment.paid") {
+        const session = await mongoose_1.default.startSession();
+        session.startTransaction();
+        try {
+            const checkoutData = event.data.attributes.data.attributes;
+            const payment = checkoutData.payments?.[0]?.attributes;
+            const netAmount = payment.net_amount / 100;
+            const paymongoFee = payment.fee / 100;
+            const totalClientPaid = payment?.amount / 100;
+            const newOrder = await model_2.default.create([
+                {
+                    webhookId: event.data.id,
+                    referenceNumber: reference_number,
+                    clientUserId,
+                    type: event.data.attributes.type,
+                    paymentStatus: "payment received",
+                    orderStatus: "pending",
+                    netAmount,
+                    totalClientPaid,
+                    paymongoFee,
+                    customerDetails: {
+                        name: payment?.billing?.name,
+                        email: payment?.billing?.email,
+                        phoneNumber: payment?.billing?.phone,
+                    },
+                    deliveryAddress: {
+                        line1: payment.billing?.address.line1,
+                        city: payment.billing?.address.city,
+                        postalCode: payment.billing?.address.postal_code,
+                        state: payment.billing?.address.state,
+                    },
+                    itemsOrdered: checkoutData.line_items,
+                },
+            ], { session });
+            await model_3.default.findByIdAndUpdate(sessionId, {
+                status: "paid",
+            }, { session });
+            await model_5.default.findByIdAndUpdate(cartId, {
+                status: "completed",
+            }, { session });
+            await model_6.default.findByIdAndUpdate(clientUserId, { $push: { orders: newOrder[0].id } }, { new: true, session });
+            await model_4.default.updateMany({ "reservedStock.cartId": cartId }, { $pull: { reservedStock: { cartId } } }, { session });
+            await session.commitTransaction();
+            // socket io event
+            (0, socket_1.getIO)().emit("orderCreated", {
+                newOrder,
+            });
+        }
+        catch (error) {
+            await session.abortTransaction();
+            console.error("Transaction failed:", error);
+            throw error;
+        }
+        finally {
+            session.endSession();
+        }
     }
     return newWebhook;
 };
+const getPaymentsService = async (page, limit) => {
+    const skip = (page - 1) * limit;
+    const [payments, total] = await Promise.all([
+        model_1.default.find({}).skip(skip).limit(limit),
+        model_1.default.countDocuments(),
+    ]);
+    return {
+        payments,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+    };
+};
+const getPaymentService = async (id) => {
+    if (!id || !validation_1.getPaymentServiceSchema.safeParse(id).success) {
+        throw new ValidationError_1.ValidationError("Invalid product id");
+    }
+    const payment = await model_1.default.findById(id);
+    if (!payment) {
+        throw new NotFoundError_1.NotFoundError("Product not found");
+    }
+    return payment;
+};
 exports.default = {
     acceptWebhookEndpointService,
+    getPaymentsService,
+    getPaymentService,
 };

@@ -8,6 +8,7 @@ const model_2 = __importDefault(require("../products/model"));
 const validation_1 = require("./validation");
 const ValidationError_1 = require("../../config/ValidationError");
 const NotFoundError_1 = require("../../config/NotFoundError");
+const model_3 = __importDefault(require("../clientUsers/model"));
 const createCartService = async (id) => {
     const parsed = validation_1.CreateCartServiceSchema.safeParse(id);
     if (!parsed.success) {
@@ -30,14 +31,76 @@ const createCartService = async (id) => {
     });
     return newCart;
 };
-const getCartService = async (id) => {
-    const parsed = validation_1.CreateCartServiceSchema.safeParse(id);
+const createClientUserCartService = async (body) => {
+    const parsed = validation_1.CreateClientUserCartSchema.safeParse(body);
     if (!parsed.success) {
-        throw new ValidationError_1.ValidationError("Invalid Product id");
+        throw new ValidationError_1.ValidationError("Invalid Product or Client User id");
     }
-    const cart = await model_1.default.findById(parsed.data).populate("items.productid");
+    const [clientUser, product] = await Promise.all([
+        model_3.default.findById(parsed.data.userId),
+        model_2.default.findById(parsed.data.productId),
+    ]);
+    if (!clientUser || !product) {
+        throw new NotFoundError_1.NotFoundError("Client User or Product was not found.");
+    }
+    const cart = await model_1.default.findOne({
+        clientUserId: clientUser.id,
+        status: "pending",
+    });
     if (!cart) {
-        throw new NotFoundError_1.NotFoundError("Invalid Product id");
+        const totalPrice = product.price;
+        const items = [{ productid: product._id, quantity: 1 }];
+        const isFreeDelivery = product.price >= 5000;
+        const newCart = await model_1.default.create({
+            items,
+            isFreeDelivery,
+            totalPrice,
+            clientUserId: clientUser.id,
+        });
+        return newCart;
+    }
+    else {
+        const cartItems = cart.items;
+        const existingItem = cartItems.find((item) => item.productid.toString() === product.id.toString());
+        if (existingItem) {
+            if (existingItem.quantity < product.stockQuantity) {
+                existingItem.quantity += 1;
+            }
+        }
+        else {
+            cartItems.push({
+                productid: product._id,
+                quantity: 1,
+            });
+        }
+        const productIds = cart.items.map((item) => item.productid);
+        const productsData = await model_2.default.find({ _id: { $in: productIds } });
+        const productMap = new Map(productsData.map((p) => [p._id.toString(), p]));
+        let newTotal = 0;
+        for (const item of cart.items) {
+            const productData = productMap.get(item.productid.toString());
+            if (productData) {
+                newTotal += productData.price * item.quantity;
+            }
+        }
+        cart.totalPrice = newTotal;
+        cart.isFreeDelivery = newTotal >= 5000;
+        await cart.save();
+        return cart;
+    }
+};
+const getCartService = async (id) => {
+    const parsed = validation_1.getCartSchema.safeParse(id);
+    if (!parsed.success) {
+        throw new ValidationError_1.ValidationError("Invalid cart id");
+    }
+    const idValue = parsed.data;
+    let cart = await model_1.default.findById(idValue).populate("items.productid");
+    if (!cart) {
+        cart = await model_1.default.findOne({
+            clientUserId: idValue,
+            status: "pending",
+        }).populate("items.productid");
     }
     return cart;
 };
@@ -64,14 +127,18 @@ const addItemService = async (data) => {
             quantity: 1,
         });
     }
+    const productIds = cartStorage.items.map((item) => item.productid);
+    const productsData = await model_2.default.find({ _id: { $in: productIds } });
+    const productMap = new Map(productsData.map((p) => [p._id.toString(), p]));
     let newTotal = 0;
-    for (const item of cartItems) {
-        const productData = await model_2.default.findById(item.productid);
+    for (const item of cartStorage.items) {
+        const productData = productMap.get(item.productid.toString());
         if (productData) {
             newTotal += productData.price * item.quantity;
         }
     }
     cartStorage.totalPrice = newTotal;
+    cartStorage.isFreeDelivery = newTotal >= 5000;
     await cartStorage.save();
     return cartStorage;
 };
@@ -82,6 +149,7 @@ const addQuantiyService = async (data) => {
     }
     const cartStorage = await model_1.default.findById(parsed.data.cartId);
     const product = await model_2.default.findById(parsed.data.productId);
+    console.log(cartStorage);
     if (!cartStorage || !product) {
         throw new NotFoundError_1.NotFoundError("Cart Storage or product not found!");
     }
@@ -90,10 +158,22 @@ const addQuantiyService = async (data) => {
     if (!itemToAddQuantity) {
         throw new NotFoundError_1.NotFoundError("Product not found!");
     }
-    if (itemToAddQuantity.quantity >= product.stockQuantity) {
-        return {
-            message: "You’ve added the maximum number of this item",
-        };
+    const reservedStock = product.reservedStock.find((stock) => stock.cartId === cartStorage.id);
+    if (reservedStock) {
+        const reservedQuantity = reservedStock.quantity;
+        const availableStock = reservedQuantity + product.stockQuantity;
+        if (itemToAddQuantity.quantity >= availableStock) {
+            return {
+                message: "You’ve added the maximum number of this item",
+            };
+        }
+    }
+    else {
+        if (itemToAddQuantity.quantity >= product.stockQuantity) {
+            return {
+                message: "You’ve added the maximum number of this item",
+            };
+        }
     }
     itemToAddQuantity.quantity += 1;
     let newTotal = 0;
@@ -174,4 +254,5 @@ exports.default = {
     addQuantiyService,
     minusQuantityService,
     removeItemService,
+    createClientUserCartService,
 };
