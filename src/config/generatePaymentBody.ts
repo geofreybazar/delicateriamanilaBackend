@@ -1,4 +1,10 @@
 import { CreatePaymongoPaymentRequestType } from "../modules/checkoutSession/validation";
+import config from "./config";
+
+const url =
+  config.NODE_ENV === "development"
+    ? "http://localhost:3000 "
+    : "https://www.delicateriamanila.com";
 
 export const generatePaymentBody = (data: CreatePaymongoPaymentRequestType) => {
   const items = data.items.map((item) => {
@@ -52,8 +58,8 @@ export const generatePaymentBody = (data: CreatePaymongoPaymentRequestType) => {
         ],
         reference_number: `${data.sessionId}_${data.cartId}`,
         statement_descriptor: "Delicateria Manila",
-        success_url: `http://localhost:3000/checkout/successpayment/${data.sessionId}_${data.cartId}`,
-        cancel_url: "http://localhost:3000/checkout/cancel",
+        success_url: `${url}/checkout/successpayment/${data.sessionId}_${data.cartId}`,
+        cancel_url: `${url}/checkout/cancel`,
       },
     },
   };

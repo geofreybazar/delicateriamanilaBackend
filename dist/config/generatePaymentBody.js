@@ -1,6 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generatePaymentBody = void 0;
+const config_1 = __importDefault(require("./config"));
+const url = config_1.default.NODE_ENV === "development"
+    ? "http://localhost:3000 "
+    : "https://www.delicateriamanila.com";
 const generatePaymentBody = (data) => {
     const items = data.items.map((item) => {
         return {
@@ -52,8 +59,8 @@ const generatePaymentBody = (data) => {
                 ],
                 reference_number: `${data.sessionId}_${data.cartId}`,
                 statement_descriptor: "Delicateria Manila",
-                success_url: `http://localhost:3000/checkout/successpayment/${data.sessionId}_${data.cartId}`,
-                cancel_url: "http://localhost:3000/checkout/cancel",
+                success_url: `${url}/checkout/successpayment/${data.sessionId}_${data.cartId}`,
+                cancel_url: `${url}/checkout/cancel`,
             },
         },
     };

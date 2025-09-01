@@ -293,7 +293,7 @@ const removeItemService = async (data: AddItemServiceType) => {
   }
 
   const { cartId, productId } = parsed.data;
-
+  console.log(cartId);
   const cartStorage = await CartStorage.findById(cartId);
   if (!cartStorage) {
     throw new NotFoundError("Cart Storage not found!");

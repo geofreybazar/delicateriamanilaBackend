@@ -225,6 +225,7 @@ const removeItemService = async (data) => {
         throw new ValidationError_1.ValidationError("Invalid data");
     }
     const { cartId, productId } = parsed.data;
+    console.log(cartId);
     const cartStorage = await model_1.default.findById(cartId);
     if (!cartStorage) {
         throw new NotFoundError_1.NotFoundError("Cart Storage not found!");

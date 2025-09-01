@@ -5,8 +5,8 @@ export const revalidateTag = async (tag: string) => {
   let url;
   if (environment === "development") {
     url = "http://localhost:3000/";
-  } else {
-    url = "productionURL";
+  } else if (environment === "production") {
+    url = config.PRODUCTION_URL;
   }
 
   await fetch(`${url}/api/revalidate`, {

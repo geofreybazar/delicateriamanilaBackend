@@ -11,8 +11,8 @@ const revalidateTag = async (tag) => {
     if (environment === "development") {
         url = "http://localhost:3000/";
     }
-    else {
-        url = "productionURL";
+    else if (environment === "production") {
+        url = config_1.default.PRODUCTION_URL;
     }
     await fetch(`${url}/api/revalidate`, {
         method: "POST",
