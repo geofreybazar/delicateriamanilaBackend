@@ -32,6 +32,7 @@ const getClientUserService = async (email) => {
         orderStatus: 1,
         itemsOrdered: 1,
         totalClientPaid: 1,
+        createdAt: 1,
     });
     return clientUser;
 };

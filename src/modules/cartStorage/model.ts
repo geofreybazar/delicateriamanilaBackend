@@ -32,6 +32,7 @@ const CartStorageSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
+    deliveryFee: { type: Number },
   },
   { timestamps: true }
 );

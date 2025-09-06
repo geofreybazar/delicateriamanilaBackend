@@ -3,7 +3,7 @@ import config from "./config";
 
 const url =
   config.NODE_ENV === "development"
-    ? "http://localhost:3000 "
+    ? "http://localhost:3000"
     : "https://www.delicateriamanila.com";
 
 export const generatePaymentBody = (data: CreatePaymongoPaymentRequestType) => {
@@ -13,7 +13,7 @@ export const generatePaymentBody = (data: CreatePaymongoPaymentRequestType) => {
       images: [item.imgUrl],
       amount: item.price * 100,
       quantity: item.quantity,
-      description: "item discription",
+      description: item.description,
       name: item.name,
     };
   });
@@ -39,6 +39,9 @@ export const generatePaymentBody = (data: CreatePaymongoPaymentRequestType) => {
         line_items: [
           ...items,
           {
+            images: [
+              "https://res.cloudinary.com/dxbz4iqaz/image/upload/v1757137620/shipping_d0x2ek.png",
+            ],
             currency: "PHP",
             amount: data.shippingFee * 100,
             description: "Shipping fee",

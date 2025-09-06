@@ -219,7 +219,7 @@ const getDashboardSummaryService = async () => {
     const totalOrders = await model_2.default.countDocuments();
     const totalProducts = await model_3.default.countDocuments();
     const totalClientCustomers = await model_4.default.countDocuments();
-    const totalNet = await model_5.default.aggregate([
+    const totalNetAmount = await model_5.default.aggregate([
         { $match: { type: "checkout_session.payment.paid" } },
         { $unwind: "$data.data.attributes.data.attributes.payments" },
         {
@@ -231,7 +231,9 @@ const getDashboardSummaryService = async () => {
             },
         },
     ]);
-    console.log(totalNet);
+    const totalNet = totalNetAmount.length === 1
+        ? totalNetAmount[0]
+        : { _id: null, totalNetAmount: 0 };
     const totalCounts = {
         totalOrders,
         totalProducts,

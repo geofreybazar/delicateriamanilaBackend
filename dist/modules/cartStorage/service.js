@@ -225,7 +225,6 @@ const removeItemService = async (data) => {
         throw new ValidationError_1.ValidationError("Invalid data");
     }
     const { cartId, productId } = parsed.data;
-    console.log(cartId);
     const cartStorage = await model_1.default.findById(cartId);
     if (!cartStorage) {
         throw new NotFoundError_1.NotFoundError("Cart Storage not found!");
@@ -237,15 +236,25 @@ const removeItemService = async (data) => {
     // Remove item by index
     cartStorage.items.splice(itemIndex, 1);
     // Recalculate total price
-    let newTotal = 0;
-    for (const item of cartStorage.items) {
-        const prod = await model_2.default.findById(item.productid);
-        if (prod) {
-            newTotal += prod.price * item.quantity;
-        }
-    }
-    cartStorage.totalPrice = newTotal;
+    const productIds = cartStorage.items.map((i) => i.productid);
+    const products = await model_2.default.find({ _id: { $in: productIds } });
+    const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+    cartStorage.totalPrice = cartStorage.items.reduce((sum, item) => {
+        const prod = productMap.get(item.productid.toString());
+        return prod ? sum + prod.price * item.quantity : sum;
+    }, 0);
     await cartStorage.save();
+    // Restore stock
+    const product = await model_2.default.findById(productId);
+    if (!product)
+        throw new NotFoundError_1.NotFoundError("Product not found");
+    const reservedStockIndex = product.reservedStock.findIndex((rs) => rs.cartId === cartId);
+    if (reservedStockIndex !== -1) {
+        const reservedStock = product.reservedStock[reservedStockIndex];
+        product.stockQuantity += reservedStock.quantity;
+        product.reservedStock.splice(reservedStockIndex, 1); // remove entry instead of zeroing
+        await product.save();
+    }
     return cartStorage;
 };
 exports.default = {

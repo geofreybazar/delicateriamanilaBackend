@@ -7,14 +7,8 @@ const getStaffActivityLogs = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.user || typeof req.user === "string") {
-    const error: any = new Error("You are not authenticated");
-    error.name = "AuthenticationError";
-    error.status = 401;
-    throw error;
-  }
-  const id = req.user.id;
-
+  const id = req.params.id;
+  console.log("here");
   try {
     const staffActivityLogs = await service.getStaffActivityLogsService(id);
     res.status(201).json(staffActivityLogs);

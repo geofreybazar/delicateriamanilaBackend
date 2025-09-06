@@ -44,6 +44,7 @@ const getClientUserService = async (email: GetClientUserType) => {
     orderStatus: 1,
     itemsOrdered: 1,
     totalClientPaid: 1,
+    createdAt: 1,
   });
   return clientUser;
 };

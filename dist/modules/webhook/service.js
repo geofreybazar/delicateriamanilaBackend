@@ -49,6 +49,12 @@ const acceptWebhookEndpointService = async (webhookbody) => {
             const netAmount = payment.net_amount / 100;
             const paymongoFee = payment.fee / 100;
             const totalClientPaid = payment?.amount / 100;
+            const paymentBrand = payment?.source?.brand;
+            const paymentId = payment?.source?.id;
+            const paymentType = payment?.source?.type;
+            const paymentLast4 = payment?.source?.last4;
+            const shippingFeeItem = checkoutData.line_items.filter((item) => item.name === "Shipping Fee");
+            const orderedItems = checkoutData.line_items.filter((item) => item.name !== "Shipping Fee");
             const newOrder = await model_2.default.create([
                 {
                     webhookId: event.data.id,
@@ -56,6 +62,13 @@ const acceptWebhookEndpointService = async (webhookbody) => {
                     clientUserId,
                     type: event.data.attributes.type,
                     paymentStatus: "payment received",
+                    paymentMethod: {
+                        paymentBrand,
+                        paymentId,
+                        paymentType,
+                        paymentLast4,
+                    },
+                    deliveryFee: shippingFeeItem[0].amount / 100,
                     orderStatus: "pending",
                     netAmount,
                     totalClientPaid,
@@ -71,7 +84,7 @@ const acceptWebhookEndpointService = async (webhookbody) => {
                         postalCode: payment.billing?.address.postal_code,
                         state: payment.billing?.address.state,
                     },
-                    itemsOrdered: checkoutData.line_items,
+                    itemsOrdered: orderedItems,
                 },
             ], { session });
             await model_3.default.findByIdAndUpdate(sessionId, {

@@ -298,7 +298,7 @@ const getDashboardSummaryService = async () => {
   const totalOrders = await Orders.countDocuments();
   const totalProducts = await Products.countDocuments();
   const totalClientCustomers = await ClientUser.countDocuments();
-  const totalNet = await Webhook.aggregate([
+  const totalNetAmount = await Webhook.aggregate([
     { $match: { type: "checkout_session.payment.paid" } },
     { $unwind: "$data.data.attributes.data.attributes.payments" },
     {
@@ -310,7 +310,12 @@ const getDashboardSummaryService = async () => {
       },
     },
   ]);
-  console.log(totalNet);
+
+  const totalNet =
+    totalNetAmount.length === 1
+      ? totalNetAmount[0]
+      : { _id: null, totalNetAmount: 0 };
+
   const totalCounts = {
     totalOrders,
     totalProducts,

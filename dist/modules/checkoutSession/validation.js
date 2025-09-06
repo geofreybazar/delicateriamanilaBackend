@@ -12,6 +12,7 @@ exports.CheckoutSessionSchema = zod_1.z.object({
         quantity: zod_1.z.number().min(1, "Quantity is required"),
         price: zod_1.z.number().min(1, "Price is required"),
         imgUrl: zod_1.z.string().min(1, "Image URl is required"),
+        description: zod_1.z.string(),
     })),
 });
 exports.CreatePaymongoPaymentRequestSchema = zod_1.z.object({
@@ -36,6 +37,7 @@ exports.CreatePaymongoPaymentRequestSchema = zod_1.z.object({
         quantity: zod_1.z.number().int().positive("Quantity must be greater than 0"),
         price: zod_1.z.number().nonnegative("Price must be 0 or greater"),
         imgUrl: zod_1.z.string().url("Invalid image URL"),
+        description: zod_1.z.string(),
         _id: zod_1.z.string().min(1, "_id is required"),
     }))
         .min(1, "At least one item is required"),

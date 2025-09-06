@@ -35,6 +35,7 @@ const CartStorageSchema = new mongoose_1.default.Schema({
         type: Boolean,
         required: true,
     },
+    deliveryFee: { type: Number },
 }, { timestamps: true });
 CartStorageSchema.set("toJSON", {
     transform: (_document, returnedObject) => {

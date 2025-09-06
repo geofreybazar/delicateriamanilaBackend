@@ -11,6 +11,7 @@ export const CheckoutSessionSchema = z.object({
       quantity: z.number().min(1, "Quantity is required"),
       price: z.number().min(1, "Price is required"),
       imgUrl: z.string().min(1, "Image URl is required"),
+      description: z.string(),
     })
   ),
 });
@@ -40,6 +41,7 @@ export const CreatePaymongoPaymentRequestSchema = z.object({
         quantity: z.number().int().positive("Quantity must be greater than 0"),
         price: z.number().nonnegative("Price must be 0 or greater"),
         imgUrl: z.string().url("Invalid image URL"),
+        description: z.string(),
         _id: z.string().min(1, "_id is required"),
       })
     )

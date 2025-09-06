@@ -1,1 +1,0 @@
-import{g as t,a as i}from"./index-vQs_jjn0.js";const c=e=>{const{data:r,isLoading:s,isError:u,error:o,isSuccess:a}=t({queryKey:["user",e],queryFn:()=>i.getUser(e)});return{user:r,isLoadingUser:s,isError:u,error:o,isSuccess:a}};export{c as u};

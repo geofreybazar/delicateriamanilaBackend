@@ -7,5 +7,5 @@ const express_1 = __importDefault(require("express"));
 const controller_1 = __importDefault(require("./controller"));
 const authenticateToken_1 = __importDefault(require("../../middlewares/authenticateToken"));
 const StaffActivityRouter = express_1.default.Router();
-StaffActivityRouter.get("/getstaffactivitylogs", authenticateToken_1.default, controller_1.default.getStaffActivityLogs);
+StaffActivityRouter.get("/getstaffactivitylogs/:id", authenticateToken_1.default, controller_1.default.getStaffActivityLogs);
 exports.default = StaffActivityRouter;

@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import mongoose from "mongoose";
+import CartStorage from "../modules/cartStorage/model";
 import CheckoutSession from "../modules/checkoutSession/model";
 import Products from "../modules/products/model";
 import { revalidateTag } from "./revalidateTag";
@@ -18,7 +19,7 @@ export const stockRelease = () => {
       const checkoutSessions = await CheckoutSession.find({
         status: "pending",
         expiresAt: { $lt: now },
-      }).session(session); // bind query to transaction
+      }).session(session);
 
       for (const checkoutSession of checkoutSessions) {
         const cartId = checkoutSession.cartId;
@@ -38,11 +39,13 @@ export const stockRelease = () => {
             throw new NotFoundError("Reserved stock not found");
 
           product.stockQuantity += reservedStock.quantity;
-          reservedStock.quantity = 0;
-
+          product.reservedStock.pull({ cartId: cartId });
           await product.save({ session });
         }
 
+        await CartStorage.findByIdAndUpdate(cartId, {
+          status: "expired",
+        });
         checkoutSession.status = "expired";
         await checkoutSession.save({ session });
       }

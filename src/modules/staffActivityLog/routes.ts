@@ -5,7 +5,7 @@ import authenticateToken from "../../middlewares/authenticateToken";
 const StaffActivityRouter = express.Router();
 
 StaffActivityRouter.get(
-  "/getstaffactivitylogs",
+  "/getstaffactivitylogs/:id",
   authenticateToken,
   controller.getStaffActivityLogs
 );

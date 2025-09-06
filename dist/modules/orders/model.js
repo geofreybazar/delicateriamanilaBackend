@@ -45,6 +45,10 @@ const OrderSchema = new mongoose_1.default.Schema({
         contactNumber: { type: String, required: false },
         pickupDateAndTime: { type: Date, required: false },
     },
+    deliveryFee: {
+        type: Number,
+        required: true,
+    },
     netAmount: {
         type: Number,
         required: true,
@@ -52,6 +56,12 @@ const OrderSchema = new mongoose_1.default.Schema({
     totalClientPaid: {
         type: Number,
         required: true,
+    },
+    paymentMethod: {
+        paymentBrand: { type: String, required: false },
+        paymentId: { type: String, required: false },
+        paymentType: { type: String, required: false },
+        paymentLast4: { type: String, required: false },
     },
     paymongoFee: {
         type: Number,
@@ -72,7 +82,7 @@ const OrderSchema = new mongoose_1.default.Schema({
         {
             amount: { type: Number, required: true },
             currency: { type: String, required: true },
-            desciption: { type: String },
+            description: { type: String },
             images: [{ type: String, required: true }],
             name: { type: String, required: true },
             quantity: { type: Number, required: true },

@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generatePaymentBody = void 0;
 const config_1 = __importDefault(require("./config"));
 const url = config_1.default.NODE_ENV === "development"
-    ? "http://localhost:3000 "
+    ? "http://localhost:3000"
     : "https://www.delicateriamanila.com";
 const generatePaymentBody = (data) => {
     const items = data.items.map((item) => {
@@ -15,7 +15,7 @@ const generatePaymentBody = (data) => {
             images: [item.imgUrl],
             amount: item.price * 100,
             quantity: item.quantity,
-            description: "item discription",
+            description: item.description,
             name: item.name,
         };
     });
@@ -40,6 +40,9 @@ const generatePaymentBody = (data) => {
                 line_items: [
                     ...items,
                     {
+                        images: [
+                            "https://res.cloudinary.com/dxbz4iqaz/image/upload/v1757137620/shipping_d0x2ek.png",
+                        ],
                         currency: "PHP",
                         amount: data.shippingFee * 100,
                         description: "Shipping fee",

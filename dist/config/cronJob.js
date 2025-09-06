@@ -6,8 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.stockRelease = void 0;
 const node_cron_1 = __importDefault(require("node-cron"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const model_1 = __importDefault(require("../modules/checkoutSession/model"));
-const model_2 = __importDefault(require("../modules/products/model"));
+const model_1 = __importDefault(require("../modules/cartStorage/model"));
+const model_2 = __importDefault(require("../modules/checkoutSession/model"));
+const model_3 = __importDefault(require("../modules/products/model"));
 const revalidateTag_1 = require("./revalidateTag");
 const NotFoundError_1 = require("./NotFoundError");
 const stockRelease = () => {
@@ -17,24 +18,27 @@ const stockRelease = () => {
         session.startTransaction();
         try {
             const now = new Date();
-            const checkoutSessions = await model_1.default.find({
+            const checkoutSessions = await model_2.default.find({
                 status: "pending",
                 expiresAt: { $lt: now },
-            }).session(session); // bind query to transaction
+            }).session(session);
             for (const checkoutSession of checkoutSessions) {
                 const cartId = checkoutSession.cartId;
                 const items = checkoutSession.items;
                 for (const item of items) {
-                    const product = await model_2.default.findById(item.productId).session(session);
+                    const product = await model_3.default.findById(item.productId).session(session);
                     if (!product)
                         throw new NotFoundError_1.NotFoundError("Product not found");
                     const reservedStock = product.reservedStock.find((prod) => prod.cartId === cartId);
                     if (!reservedStock)
                         throw new NotFoundError_1.NotFoundError("Reserved stock not found");
                     product.stockQuantity += reservedStock.quantity;
-                    reservedStock.quantity = 0;
+                    product.reservedStock.pull({ cartId: cartId });
                     await product.save({ session });
                 }
+                await model_1.default.findByIdAndUpdate(cartId, {
+                    status: "expired",
+                });
                 checkoutSession.status = "expired";
                 await checkoutSession.save({ session });
             }

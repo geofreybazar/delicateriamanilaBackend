@@ -18,7 +18,7 @@ OrdersRouter.get("/gettotalnumberorders", authenticateToken_1.default, controlle
 OrdersRouter.get("/getriderpendingdeliveries", authenticateToken_1.default, controller_1.default.getRiderPendingDeliveries);
 OrdersRouter.get("/riderdeliveredorders", authenticateToken_1.default, controller_1.default.getRiderDeliveredOrders);
 OrdersRouter.get("/getrecentorders", authenticateToken_1.default, controller_1.default.getRecentOrders);
-OrdersRouter.get("/:id", authenticateToken_1.default, controller_1.default.getOrder);
+OrdersRouter.get("/:id", controller_1.default.getOrder);
 OrdersRouter.patch("/ordersfordelivery/:id", authenticateToken_1.default, controller_1.default.outForDelivery);
 OrdersRouter.patch("/assigndeliveryrider", authenticateToken_1.default, controller_1.default.assignDeliveryRider);
 OrdersRouter.patch("/orderpickedup", authenticateToken_1.default, controller_1.default.orderPickedup);

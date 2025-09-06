@@ -39,13 +39,17 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
     quantity: item.quantity,
     price: item.price,
     imgUrl: item.imgUrl,
+    description: item.description,
   }));
 
   let checkoutSession;
 
   if (existingSession) {
     if (existingSession.status === "expired") {
-      return { message: "Chekout Session expired!" };
+      return {
+        title: "Items out of Stock",
+        message: "Chekout Session expired!",
+      };
     }
 
     checkoutSession = await CheckoutSession.findOneAndUpdate(
@@ -141,6 +145,7 @@ const createCheckoutSessionService = async (body: CheckoutSessionType) => {
     await session.abortTransaction();
     session.endSession();
     return {
+      title: "Items out of Stock",
       message: "Some items are out of stock, refresh to update",
       itemsNoStock: notEnoughStock,
     };
@@ -232,6 +237,18 @@ const createPaymongoPaymentRequestService = async (
   const data = generatePaymentBody(body);
 
   const paymongoPayment = await paymentPageRequest(data);
+
+  await CartStorage.findByIdAndUpdate(
+    parsed.data.cartId,
+    { deliveryFee: parsed.data.shippingFee },
+    { session }
+  );
+
+  await CheckoutSession.findByIdAndUpdate(
+    parsed.data.sessionId,
+    { deliveryFee: parsed.data.shippingFee },
+    { session }
+  );
 
   if (!paymongoPayment) {
     await session.abortTransaction();

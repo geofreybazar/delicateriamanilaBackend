@@ -55,7 +55,7 @@ OrdersRouter.get(
   authenticateToken,
   controller.getRecentOrders
 );
-OrdersRouter.get("/:id", authenticateToken, controller.getOrder);
+OrdersRouter.get("/:id", controller.getOrder);
 OrdersRouter.patch(
   "/ordersfordelivery/:id",
   authenticateToken,
