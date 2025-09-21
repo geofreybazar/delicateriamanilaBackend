@@ -125,6 +125,28 @@ const getShopFeaturedProducts = async (req, res, next) => {
         next(error);
     }
 };
+const incrementProductQuantitybyOne = async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        const incrementedProductQuantity = await service_1.default.incrementProductQuantitybyOneService(id);
+        res.status(200).json(incrementedProductQuantity);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
+const decrementProductQuantitybyOne = async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        const decrementedProductQuantity = await service_1.default.decrementProductQuantitybyOneService(id);
+        res.status(200).json(decrementedProductQuantity);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
 exports.default = {
     addProduct,
     getProducts,
@@ -134,4 +156,6 @@ exports.default = {
     getShopProducts,
     getFeaturedProducts,
     getShopFeaturedProducts,
+    incrementProductQuantitybyOne,
+    decrementProductQuantitybyOne,
 };

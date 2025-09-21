@@ -39,8 +39,19 @@ const getPayment = async (req, res, next) => {
         next(error);
     }
 };
+const getPaymentSummary = async (req, res, next) => {
+    try {
+        const paymentSummary = await service_1.default.getPaymentSummaryService();
+        res.status(201).json(paymentSummary);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+};
 exports.default = {
     acceptWebhookEndpoint,
     getPayments,
     getPayment,
+    getPaymentSummary,
 };

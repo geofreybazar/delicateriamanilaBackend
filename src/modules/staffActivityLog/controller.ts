@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { RequestWithUser } from "../../middlewares/authenticateToken";
 import service from "./service";
 
@@ -8,7 +8,6 @@ const getStaffActivityLogs = async (
   next: NextFunction
 ) => {
   const id = req.params.id;
-  console.log("here");
   try {
     const staffActivityLogs = await service.getStaffActivityLogsService(id);
     res.status(201).json(staffActivityLogs);

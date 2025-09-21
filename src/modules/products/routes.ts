@@ -13,6 +13,16 @@ ProductsRouter.get(
   controller.getShopFeaturedProducts
 );
 ProductsRouter.get("/:id", authenticateToken, controller.getProduct);
+ProductsRouter.put(
+  "/incrementproductquantity/:id",
+  authenticateToken,
+  controller.incrementProductQuantitybyOne
+);
+ProductsRouter.put(
+  "/decrementproductquantity/:id",
+  authenticateToken,
+  controller.decrementProductQuantitybyOne
+);
 ProductsRouter.put("/:id", authenticateToken, controller.updateProduct);
 ProductsRouter.delete("/", controller.deleteProducts);
 

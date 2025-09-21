@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const service_1 = __importDefault(require("./service"));
 const getStaffActivityLogs = async (req, res, next) => {
     const id = req.params.id;
-    console.log("here");
     try {
         const staffActivityLogs = await service_1.default.getStaffActivityLogsService(id);
         res.status(201).json(staffActivityLogs);

@@ -12,7 +12,7 @@ const DeliveryLogSchema = new mongoose_1.default.Schema({
     },
     order: {
         type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: "Order",
+        ref: "Orders",
         required: true,
     },
     status: {

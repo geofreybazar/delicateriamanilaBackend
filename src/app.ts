@@ -22,6 +22,8 @@ import WebhookRouter from "./modules/webhook/routes";
 import CartStorageRouter from "./modules/cartStorage/route";
 import ClienUserRouter from "./modules/clientUsers/routes";
 import StaffActivityRouter from "./modules/staffActivityLog/routes";
+import DeliveryLogsRouter from "./modules/deliveryLog/routes";
+import StoreSettingsRouter from "./modules/storeSettings/routes";
 
 import { resolve } from "path";
 
@@ -56,6 +58,8 @@ app.use("/webhook_api", WebhookRouter);
 app.use("/cart_api", CartStorageRouter);
 app.use("/clientuser_api", ClienUserRouter);
 app.use("/staffactivity_api", StaffActivityRouter);
+app.use("/deliverylogs_api", DeliveryLogsRouter);
+app.use("/storesettings_api", StoreSettingsRouter);
 
 try {
   app.get(/.*/, (_, res) => {

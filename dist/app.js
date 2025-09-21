@@ -24,6 +24,8 @@ const routes_6 = __importDefault(require("./modules/webhook/routes"));
 const route_1 = __importDefault(require("./modules/cartStorage/route"));
 const routes_7 = __importDefault(require("./modules/clientUsers/routes"));
 const routes_8 = __importDefault(require("./modules/staffActivityLog/routes"));
+const routes_9 = __importDefault(require("./modules/deliveryLog/routes"));
+const routes_10 = __importDefault(require("./modules/storeSettings/routes"));
 const path_1 = require("path");
 const MONGO_URI = config_1.default.MONGO_URI;
 const app = (0, express_1.default)();
@@ -49,6 +51,8 @@ app.use("/webhook_api", routes_6.default);
 app.use("/cart_api", route_1.default);
 app.use("/clientuser_api", routes_7.default);
 app.use("/staffactivity_api", routes_8.default);
+app.use("/deliverylogs_api", routes_9.default);
+app.use("/storesettings_api", routes_10.default);
 try {
     app.get(/.*/, (_, res) => {
         res.sendFile((0, path_1.resolve)("dist/public/index.html"));

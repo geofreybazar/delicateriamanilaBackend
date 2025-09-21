@@ -9,7 +9,7 @@ const DeliveryLogSchema = new mongoose.Schema(
     },
     order: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Order",
+      ref: "Orders",
       required: true,
     },
     status: {

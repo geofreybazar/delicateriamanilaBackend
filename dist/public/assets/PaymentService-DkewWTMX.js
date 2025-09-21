@@ -1,0 +1,1 @@
+import{H as e}from"./index-D1os0LSF.js";const s=async(t,a)=>(await(await e("/webhook_api")).get(`/getpayments?page=${t+1}&limit=${a}`)).data,i=async t=>(await(await e("/webhook_api")).get(`/${t}`)).data,o=async()=>(await(await e("/webhook_api")).get("getpaymentsummary")).data,c={getPayments:s,getPayment:i,getPaymentSummary:o};export{c as P};

@@ -180,6 +180,21 @@ const getShopFeaturedProductsService = async () => {
     const featuredProducts = await model_1.default.find({ featured: true });
     return featuredProducts;
 };
+const incrementProductQuantitybyOneService = async (id) => {
+    const incrementedProduct = await model_1.default.findByIdAndUpdate(id, { $inc: { stockQuantity: 1 } }, { new: true });
+    if (!incrementedProduct) {
+        throw new NotFoundError_1.NotFoundError("product not found!");
+    }
+    return incrementedProduct;
+};
+const decrementProductQuantitybyOneService = async (id) => {
+    const decrementedProduct = await model_1.default.findOneAndUpdate({ _id: id, stockQuantity: { $gt: 0 } }, // only update if stock > 0
+    { $inc: { stockQuantity: -1 } }, { new: true });
+    if (!decrementedProduct) {
+        throw new Error("Product not found or stock already at 0");
+    }
+    return decrementedProduct;
+};
 exports.default = {
     addProductService,
     getProductsService,
@@ -189,4 +204,6 @@ exports.default = {
     getShopProductsService,
     getFeaturedProductService,
     getShopFeaturedProductsService,
+    incrementProductQuantitybyOneService,
+    decrementProductQuantitybyOneService,
 };

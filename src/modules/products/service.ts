@@ -268,6 +268,34 @@ const getShopFeaturedProductsService = async () => {
   return featuredProducts;
 };
 
+const incrementProductQuantitybyOneService = async (id: string) => {
+  const incrementedProduct = await Products.findByIdAndUpdate(
+    id,
+    { $inc: { stockQuantity: 1 } },
+    { new: true }
+  );
+
+  if (!incrementedProduct) {
+    throw new NotFoundError("product not found!");
+  }
+
+  return incrementedProduct;
+};
+
+const decrementProductQuantitybyOneService = async (id: string) => {
+  const decrementedProduct = await Products.findOneAndUpdate(
+    { _id: id, stockQuantity: { $gt: 0 } }, // only update if stock > 0
+    { $inc: { stockQuantity: -1 } },
+    { new: true }
+  );
+
+  if (!decrementedProduct) {
+    throw new Error("Product not found or stock already at 0");
+  }
+
+  return decrementedProduct;
+};
+
 export default {
   addProductService,
   getProductsService,
@@ -277,4 +305,6 @@ export default {
   getShopProductsService,
   getFeaturedProductService,
   getShopFeaturedProductsService,
+  incrementProductQuantitybyOneService,
+  decrementProductQuantitybyOneService,
 };

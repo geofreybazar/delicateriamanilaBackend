@@ -9,5 +9,6 @@ const authenticateToken_1 = __importDefault(require("../../middlewares/authentic
 const WebhookRouter = express_1.default.Router();
 WebhookRouter.post("/paymongowebhook", controller_1.default.acceptWebhookEndpoint);
 WebhookRouter.get("/getpayments", authenticateToken_1.default, controller_1.default.getPayments);
+WebhookRouter.get("/getpaymentsummary", authenticateToken_1.default, controller_1.default.getPaymentSummary);
 WebhookRouter.get("/:id", authenticateToken_1.default, controller_1.default.getPayment);
 exports.default = WebhookRouter;

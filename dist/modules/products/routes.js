@@ -13,6 +13,8 @@ ProductsRouter.get("/getshopproducts", controller_1.default.getShopProducts);
 ProductsRouter.get("/getfeaturedproducts", controller_1.default.getFeaturedProducts);
 ProductsRouter.get("/getshopfeaturedproducts", controller_1.default.getShopFeaturedProducts);
 ProductsRouter.get("/:id", authenticateToken_1.default, controller_1.default.getProduct);
+ProductsRouter.put("/incrementproductquantity/:id", authenticateToken_1.default, controller_1.default.incrementProductQuantitybyOne);
+ProductsRouter.put("/decrementproductquantity/:id", authenticateToken_1.default, controller_1.default.decrementProductQuantitybyOne);
 ProductsRouter.put("/:id", authenticateToken_1.default, controller_1.default.updateProduct);
 ProductsRouter.delete("/", controller_1.default.deleteProducts);
 exports.default = ProductsRouter;

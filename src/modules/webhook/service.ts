@@ -180,8 +180,38 @@ const getPaymentService = async (id: GetPaymentServiceType) => {
   return payment;
 };
 
+const getPaymentSummaryService = async () => {
+  const payments = await Webhook.find({});
+
+  const allPayments =
+    payments.flatMap((p) => {
+      const session = p.data.data.attributes.data.attributes;
+      return session.payments.map((payment: any) => payment.attributes);
+    }) || [];
+
+  const totalPaid = allPayments
+    .filter((p) => p.status === "paid")
+    .reduce((sum, p) => sum + p.amount / 100, 0);
+
+  const totalRefunded = allPayments
+    .filter((p) => p.status === "refunded")
+    .reduce((sum, p) => sum + p.amount / 100, 0);
+
+  const totalFee = allPayments.reduce((sum, p) => sum + (p.fee / 100 || 0), 0);
+
+  const totalRevenue = totalPaid - totalRefunded - totalFee;
+
+  return {
+    totalRevenue,
+    totalPaid,
+    totalRefunded,
+    totalFee,
+  };
+};
+
 export default {
   acceptWebhookEndpointService,
   getPaymentsService,
   getPaymentService,
+  getPaymentSummaryService,
 };

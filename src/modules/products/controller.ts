@@ -159,6 +159,40 @@ const getShopFeaturedProducts = async (
   }
 };
 
+const incrementProductQuantitybyOne = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = req.params.id;
+
+  try {
+    const incrementedProductQuantity =
+      await service.incrementProductQuantitybyOneService(id);
+    res.status(200).json(incrementedProductQuantity);
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+const decrementProductQuantitybyOne = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = req.params.id;
+
+  try {
+    const decrementedProductQuantity =
+      await service.decrementProductQuantitybyOneService(id);
+    res.status(200).json(decrementedProductQuantity);
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   addProduct,
   getProducts,
@@ -168,4 +202,6 @@ export default {
   getShopProducts,
   getFeaturedProducts,
   getShopFeaturedProducts,
+  incrementProductQuantitybyOne,
+  decrementProductQuantitybyOne,
 };

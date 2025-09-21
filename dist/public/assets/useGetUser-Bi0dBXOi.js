@@ -1,0 +1,1 @@
+import{s as t,a as i}from"./index-D1os0LSF.js";const c=e=>{const{data:s,isLoading:r,isError:u,error:o,isSuccess:a}=t({queryKey:["user",e],queryFn:()=>i.getUser(e)});return{user:s,isLoadingUser:r,isError:u,error:o,isSuccess:a}};export{c as u};
